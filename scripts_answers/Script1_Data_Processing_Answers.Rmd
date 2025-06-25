@@ -60,13 +60,13 @@ microbio_clean <- microbio_df %>%
     dry_soil_mass = dry_weight - plate_weight,
     soil_moisture = (wet_soil_mass - dry_soil_mass) / dry_soil_mass *100 # estimate soil moisture content as percent
   ) %>%
-  dplyr::select(
+  dplyr::select(.,
     -c(sample_id, plate_weight, wet_weight, dry_weight, wet_soil_mass, dry_soil_mass)
     )
 
 # Check new variables
-table(microbio_clean$sample_type)
-summary(microbio_clean$soil_moisture)
+table(microbio_clean$sample_type) # frequency table for categorical
+summary(microbio_clean$soil_moisture) # summary of continuous vars
 ```
 
 #### Estimate Most Probable Number (MPN) from IDEXX data

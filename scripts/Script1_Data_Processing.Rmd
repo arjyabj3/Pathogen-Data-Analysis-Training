@@ -5,14 +5,23 @@ date: "2025-06-22"
 output: html_document
 ---
 
+White space is for notes - take notes here as you wish! 
+
+```{r}
+# Notes
+#Grey space is a code chunk for writing code
+#version()
+#anything 
+```
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
 # Install packages
-install.packages(c("here","tidyverse","dplyr","readxl"))
-
-install.packages("remotes")                        # if not already installed
-remotes::install_github("jknappe/quantitray")      # installs the package directly from GitHub
+# install.packages(c("here","tidyverse","dplyr","readxl"))
+# install.packages("remotes")                        # if not already installed
+# remotes::install_github("jknappe/quantitray")      # installs the package directly from GitHub
 
 # Load libraries
 library(here)
@@ -26,11 +35,13 @@ here()
 ```
 
 ## Training Module 1. Microbiology lab results and qPCR data cleaning
-In this session, we will clean and process .csv files including 
+In this session, we will clean and process .csv files  
 
 #### Read data into RStudio
 We will be using the here() package which relates all file paths to the directory in which this script is stored. This makes it easier for people to collaborate across computers, as long as the folder structure is the same. We recommend storing all data on the cloud (Box or Drive) and using the desktop Box/Drive app to be able to directly access your Box/Drive folders from your local computer. For this workshop, you will be utilizing the folder on your desktop that you created with the forked GitHub repository.   
 ```{r read.dat}
+# Test - AVOID DOING THIS!!! everyone has different file paths so if someone else uses this script, they will be confused.  
+# test <- read_csv("C:/Users/hkamato/Documents/GitHub/DHKUH Data Analysis Training/simulated_data/survey_data_simulated.csv")
 
 # Read microbiological data
 # (there are also packages you can install and load, like read_xl(), for reading .xlsx files)
@@ -42,6 +53,9 @@ tac_folder <- here("simulated_data", "simulated_cards")
 # Read and combine all TAC .xlsx output files into tac_raw
 tac_raw <- list.files(tac_folder, full.names = TRUE, pattern = "\\.xlsx$") %>%
   map_dfr(read_csv, .id = "source_file", show_col_types = FALSE)
+
+# Remove test data
+rm(test)
 ```
 
 ## MICROBIAL DATA
@@ -51,8 +65,11 @@ tac_raw <- list.files(tac_folder, full.names = TRUE, pattern = "\\.xlsx$") %>%
 names(microbio_df) # variable names
 summary(microbio_df) # summary of data
 head(microbio_df, n=8) # view top 8 rows
-unique(microbio_df$sample_id) %>% length() # number of samples
+unique(microbio_df$sample_id) %>% length(.) # number of samples
 table(microbio_df$sample_type) # number of rows in dataset by type
+
+# Add code here to view the data
+View(microbio_df)
 ```
 
 #### Clean and process microbio dataset
@@ -70,7 +87,9 @@ microbio_clean <- microbio_df %>%
 
 # Workshop task: Check your new variables
 # Add code here to check soil_moisture (continuous) and sample_type (categorical)
-
+# Check new variables
+table(microbio_clean$sample_type) # frequency table for categorical
+summary(microbio_clean$soil_moisture) # summary of continuous vars
 ```
 
 #### Estimate MPN from IDEXX data
