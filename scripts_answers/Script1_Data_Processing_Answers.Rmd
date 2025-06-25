@@ -23,6 +23,9 @@ library(readxl)
 
 # Check current directory & set new directory if needed
 here()
+view (microbio_df)
+view(tac_raw
+    )
 ```
 
 #### Read data into RStudio
