@@ -207,8 +207,24 @@ microbio_clean %>%
 # Save plot
 ggsave( here("figures_answers", "ESBL_barchart.png"), dpi = 300, width = 5, height = 3, unit = "in")
 ```
+#### Visualize ESBL concentrations by sample type
+Using the microbiology cleaned dataset, we will plot the log-transformed CFU of ESBL-*E. coli* by sample type.  
 
-#### ADD BOXPLOT OF ESBL CFU HERE #### 
+```{r esbl.concentration}
+## Practice commenting out individual lines of this code to see how it changes the plot (for example, first run the code as is, then uncomment geom_jitter and comment geom_point, then rerun the plot)
+microbio_clean %>% 
+  ggplot(aes(x = sample_type, y = log_adj_esbl_ecoli, fill = sample_type)) +
+  geom_boxplot(aes(fill = sample_type), alpha = 0.6, outliers = FALSE) +
+  geom_point(aes(color = sample_type)) + # points plotted on grid lines
+# geom_jitter(aes(color = sample_type), width = .1)  + # points jittered around grid lines
+  labs(fill = "Sample Type", 
+       x = "Sample Type", y = "log10(CFU)", 
+       title = expression("ESBL-" * italic("E. coli") * " Concentrations by Sample Type")) +
+ # guides(color = "none") + # removes legend for color = sample_type
+  theme_bw() 
+```
+
+
 
 ## Merge TAC and Microbio Datasets by Sample 
 #### Join by household ID
@@ -249,15 +265,17 @@ In theory, we would expect to see frequent detection of beta-lactamase gene, bla
 # Join micro and tac data, but keep in long format because we want to plot by Target and Category 
 tac_join <- left_join(microbio_clean, tac_clean, by = c("household_id", "sample_type"))
 
-tac_join %>%
+# Create dataset for plot
+heatmap_dat <- tac_join %>%
   filter(Category == "ARG") %>% # select only ARG targets
   mutate(
     # specify the fill color to differ based on ESBL detection
     fill_color = case_when(
       detect == 1 & esbl_ecoli_detect == 1 ~ "Detected with ESBL", 
       detect == 1 & esbl_ecoli_detect == 0 ~ "Detected without ESBL",
-      TRUE ~ "Not detected")
-  ) %>%
+      TRUE ~ "Not detected"))
+
+heatmap_dat %>% # Pipe in dataset to
   ggplot(aes(x = household_id, y = Target, fill = fill_color)) +
   geom_tile(color = "white") + # set background color
   scale_fill_manual( # set colors for ESBL+ samples, ESBL- samples, and no ARG detects
