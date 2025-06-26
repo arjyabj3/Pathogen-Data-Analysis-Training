@@ -39,7 +39,6 @@ sample_metadata <- expand.grid(
 
 ## Simulate survey data
 ```{r survey}
-
 # Create tole variable: 20 toles with 7 households each
 tole_ids <- paste0("Tole_", sprintf("%02d", 1:20))
 tole_assignment <- rep(tole_ids, each = 7)

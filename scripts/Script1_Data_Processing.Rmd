@@ -40,7 +40,7 @@ In this session, we will clean and process .csv files
 #### Read data into RStudio
 We will be using the here() package which relates all file paths to the directory in which this script is stored. This makes it easier for people to collaborate across computers, as long as the folder structure is the same. We recommend storing all data on the cloud (Box or Drive) and using the desktop Box/Drive app to be able to directly access your Box/Drive folders from your local computer. For this workshop, you will be utilizing the folder on your desktop that you created with the forked GitHub repository.   
 ```{r read.dat}
-# Test - AVOID DOING THIS!!! everyone has different file paths so if someone else uses this script, they will be confused.  
+# Test - AVOID DOING THIS!!! everyone has different file paths so if someone else uses this script with your filepath included, it will be more work for them to change all of the filepaths in the script  
 # test <- read_csv("C:/Users/hkamato/Documents/GitHub/DHKUH Data Analysis Training/simulated_data/survey_data_simulated.csv")
 
 # Read microbiological data
@@ -69,7 +69,7 @@ unique(microbio_df$sample_id) %>% length(.) # number of samples
 table(microbio_df$sample_type) # number of rows in dataset by type
 
 # Add code here to view the data
-View(microbio_df)
+
 ```
 
 #### Clean and process microbio dataset
@@ -87,9 +87,7 @@ microbio_clean <- microbio_df %>%
 
 # Workshop task: Check your new variables
 # Add code here to check soil_moisture (continuous) and sample_type (categorical)
-# Check new variables
-table(microbio_clean$sample_type) # frequency table for categorical
-summary(microbio_clean$soil_moisture) # summary of continuous vars
+
 ```
 
 #### Estimate MPN from IDEXX data
@@ -100,10 +98,14 @@ We will now use the small and large cell counts to estimate most probable number
 microbio_clean <- microbio_clean %>%
   mutate(
     # Add total coliform and E. coli MPN estimation (with 95% confidence limits) code here
-    tc_mpn = 
-    tc_mpn_lo = 
-    tc_mpn_hi = 
-
+    # Total coliform
+    tc_mpn = quantify_mpn(total_coliform_large_cell_count, total_coliform_small_cell_count, 
+                          method = "qt-2000"),
+    tc_mpn_lo = quantify_95lo(total_coliform_large_cell_count, total_coliform_small_cell_count, 
+                              method = "qt-2000"),
+    tc_mpn_hi = quantify_95hi(total_coliform_large_cell_count, total_coliform_small_cell_count, 
+                              method = "qt-2000"),
+    
     ecoli_mpn = 
     ecoli_mpn_lo = 
     ecoli_mpn_hi = 
@@ -122,7 +124,7 @@ microbio_clean <- microbio_clean %>%
 # Check dataset
 microbio_clean %>% 
   select(household_id, sample_type, tc_mpn:ar_ecoli_mpn_hi) %>% 
-  head(10)
+  head(10) # view the first 10 rows of the dataframe
 ```
 
 ```{r mpn.nafix}
@@ -180,13 +182,14 @@ microbio_clean2 <- microbio_clean2 %>%
     # Add adjustments for LOD, moisture, and sample volume for compost and effluent samples
     across(c(tc_mpn, ar_tc_mpn, ecoli_mpn, ar_ecoli_mpn),
                 ~ if_else(. == 0, 0.5, .), # set 0s to 1/2 lower limit of detection (1 MPN) 
-                .names = "{.col}_adj")) %>%
+                .names = "{.col}_adj")) %>% # add "_adj" to the end of each new variable name
   mutate(
-    across(matches("_adj$"), # only for adjusted variables 
+    across(matches("_adj$"), # only for variables that end in "adj"  
                 ~ if_else(sample_type %in% c("compost", "effluent"), . / (1 - moisture_fraction) / 2, . / 2),
                 .names = "adjusted_{.col}")) %>%
-  # Add code for log10 transformation to all adjusted MPN variables here
-  
+  # Add code to create new log10-transormed variables for all adjusted MPN variables here
+  mutate(
+    
   )
 
 # Add code to check distribution of unadjusted vs. adjusted MPN variables using a histogram here
