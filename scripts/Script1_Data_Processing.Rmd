@@ -19,16 +19,11 @@ White space is for notes - take notes here as you wish!
 knitr::opts_chunk$set(echo = TRUE)
 
 # Install packages
-<<<<<<< HEAD
 
-#install.packages(c("here","tidyverse","dplyr","readxl"))
- #install.packages("remotes")                        # if not already installed
-#remotes::install_github("jknappe/quantitray")      # installs the package directly from GitHub
-=======
 # install.packages(c("here","tidyverse","dplyr","readxl"))
 # install.packages("remotes")                        # if not already installed
 # remotes::install_github("jknappe/quantitray")      # installs the package directly from GitHub
->>>>>>> upstream/main
+
 
 # Load libraries
 library(here)
@@ -62,7 +57,7 @@ tac_raw <- list.files(tac_folder, full.names = TRUE, pattern = "\\.xlsx$") %>%
   map_dfr(read_csv, .id = "source_file", show_col_types = FALSE)
 
 # Remove test data
-rm(test)
+#rm(test)
 ```
 
 ## MICROBIAL DATA
@@ -94,7 +89,8 @@ microbio_clean <- microbio_df %>%
 
 # Workshop task: Check your new variables
 # Add code here to check soil_moisture (continuous) and sample_type (categorical)
-
+summary(microbio_clean$soil_moisture)
+table(microbio_clean$sample_type)
 ```
 
 #### Estimate MPN from IDEXX data
@@ -102,7 +98,7 @@ We will now use the small and large cell counts to estimate most probable number
 ```{r mpn.task}
 # Workshop task: Add MPN estimates using quantify_mpn()
 # Hint: type help("quantify_mpn") in console to get information about how to use the command
-microbio_clean <- microbio_clean %>%
+microbio_clean_v2 <- microbio_clean %>% #add version 2 for save data
   mutate(
     # Add total coliform and E. coli MPN estimation (with 95% confidence limits) code here
     # Total coliform
@@ -112,26 +108,53 @@ microbio_clean <- microbio_clean %>%
                               method = "qt-2000"),
     tc_mpn_hi = quantify_95hi(total_coliform_large_cell_count, total_coliform_small_cell_count, 
                               method = "qt-2000"),
-    
-    ecoli_mpn = 
-    ecoli_mpn_lo = 
-    ecoli_mpn_hi = 
+    #add here
+    ecoli_mpn = quantify_mpn(e_coli_large_cell_count,
+                             e_coli_small_cell_count, 
+                          method = "qt-2000"),
+    ecoli_mpn_lo =quantify_95lo(e_coli_large_cell_count,
+                                 e_coli_small_cell_count, 
+                         method = "qt-2000"), 
+    ecoli_mpn_hi = quantify_95hi(e_coli_large_cell_count,
+                                e_coli_small_cell_count, 
+                          method = "qt-2000"),
 
-    ar_tc_mpn = 
-    ar_tc_mpn_lo = 
-    ar_tc_mpn_hi = 
+    ar_tc_mpn = quantify_mpn(ar_total_coliform_large_cell_count,
+                             ar_total_coliform_small_cell_count, 
+                          method = "qt-2000"),
+    ar_tc_mpn_lo = quantify_95lo(ar_total_coliform_large_cell_count,
+                                  ar_total_coliform_small_cell_count, 
+                         method = "qt-2000"),
+    ar_tc_mpn_hi = quantify_95hi(ar_total_coliform_large_cell_count,
+                                ar_total_coliform_small_cell_count, 
+                          method = "qt-2000"),
 
-    ar_ecoli_mpn = 
-    ar_ecoli_mpn_lo = 
-    ar_ecoli_mpn_hi = 
+    ar_ecoli_mpn = quantify_mpn(ar_e_coli_large_cell_count,
+                                ar_e_coli_small_cell_count,
+                                method = "qt-2000"),
+    ar_ecoli_mpn_lo = quantify_95lo(ar_e_coli_large_cell_count,
+                                    ar_e_coli_small_cell_count,
+                                    method = "qt-2000"),
+    ar_ecoli_mpn_hi = quantify_95hi(ar_e_coli_large_cell_count,
+                                    ar_e_coli_small_cell_count,
+                                    
+                                    method = "qt-2000"),
   )
 ```
 
 ```{r mpn.check}
 # Check dataset
-microbio_clean %>% 
+microbio_clean_v2 %>% 
   select(household_id, sample_type, tc_mpn:ar_ecoli_mpn_hi) %>% 
   head(10) # view the first 10 rows of the dataframe
+microbio_clean <-microbio_clean_v2
+microbio_clean %>% 
+select(household_id, sample_type, tc_mpn:ar_ecoli_mpn_hi) %>% 
+  head(10) # view the first 10 rows of the dataframe
+
+
+#check dataset again
+
 ```
 
 ```{r mpn.nafix}
@@ -144,6 +167,12 @@ microbio_clean <- microbio_clean %>%
     ec_detect = if_else(ecoli_mpn > 0, 1, 0),
     ar_ec_detect = if_else(ar_ecoli_mpn > 0, 1, 0)
   )
+
+table(microbio_clean$tc_detect)
+
+#bonus check variable frequency by sample type
+table(microbio_clean$sample_type,microbio_clean$tc_detect)
+
 ```
 
 #### Transform ESBL CFU results
@@ -158,15 +187,16 @@ microbio_clean2 <- microbio_clean %>%
   mutate(
     moisture_fraction = soil_moisture / 100,
     esbl_e_coli_cfu_adj = if_else(esbl_e_coli_cfu == 0, 0.5, esbl_e_coli_cfu), # set 0s to 1/2 lower limit of detection (1 CFU)
-    adjusted_esbl_cfu = case_when( # for 
+    adjusted_esbl_cfu = case_when( # for specifying values of new variable given value in existing variable
       sample_type %in% c("effluent", "compost") ~ esbl_e_coli_cfu_adj / (1 - moisture_fraction) / 2,
       sample_type == "produce" ~ esbl_e_coli_cfu_adj,
       TRUE ~ NA_real_),
     
     # Add code to create new log_adjusted_esbl_cfu variable here 
-    log_adjusted_esbl_cfu = 
-      
+    log_adjusted_esbl_cfu = log10(adjusted_esbl_cfu),
   )
+hist(microbio_clean2$log_adjusted_esbl_cfu
+      )
 
 # Add code to check distribution of log adjusted esbl cfu variable here 
 # Hint: use a histogram
@@ -196,11 +226,17 @@ microbio_clean2 <- microbio_clean2 %>%
                 .names = "adjusted_{.col}")) %>%
   # Add code to create new log10-transormed variables for all adjusted MPN variables here
   mutate(
+    across(matches("^adjusted_.*_adj$"),~log10(.) +1, .names = "log_{.col}")
     
   )
 
 # Add code to check distribution of unadjusted vs. adjusted MPN variables using a histogram here
-
+#add code to add 1 to adjusted esbl cfu to shift values from negative to positive
+#for MPN we already did log10() +, but for esbl we did log10() but didnt add 1, so we had negative values, here we shift values up by 1
+microbio_clean2$log_adjusted_adjusted_ar_ecoli_mpn_adj <- microbio_clean2$log_adjusted_adjusted_esbl_e_coli_cfu_adj+1
+hist(microbio_clean2$log_adjusted_adjusted_ar_ecoli_mpn_adj)
+hist(microbio_clean2$adjusted_adjusted_esbl_e_coli_cfu_adj)
+hist(micro)
 ```
 
 ## TAC DATA
